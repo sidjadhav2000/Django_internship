@@ -1,0 +1,59 @@
+=====================Urls========================================
+from django.contrib import admin
+from django.urls import path
+from migapp.views import home
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path("" ,home),
+]
+
+=======================Settings====================================
+ALLOWED_HOSTS = ["*"]
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'migapp',
+]
+
+========================View=========================================
+from django.shortcuts import render
+from requests import *
+
+def home(request):
+	if request.GET.get("btn"):
+			image_url = "https://zenquotes.io/api/image"
+			return render(request, "home.html", {"image_url" : image_url  })
+	else:
+		return render(request,"home.html", { "image_url" : ""  })
+
+
+
+=============================HTML=====================================
+<html>
+<head>
+<title>Motivational Image Generator</title>
+<style>
+	*{font-size:40px ; font-family:calibry;}
+	body{background-color:azure; }
+</style>
+
+</head>
+
+<body>
+<center>
+	<h1>Motivational Image Generator</h1>
+	<form>
+	<input type = "Submit" value="Get Image" name  =  "btn"/>
+	</form>
+	<img src="{{ image_url }}" alt="Motivational Image">
+
+</center>
+
+</body>
+</html>
