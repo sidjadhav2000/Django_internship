@@ -1,0 +1,347 @@
+=======================Settings====================================
+ALLOWED_HOSTS = ["*"]
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+     'gfapp',
+]
+=====================Urls========================================
+from django.contrib import admin
+from django.urls import path
+from gfapp.views import ulogin,usignup,uhome,ulogout
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path("",uhome, name="uhome"),
+    path("ulogin",ulogin, name="ulogin"),
+    path("usignup",usignup, name="usignup"),
+    path("ulogout",ulogout, name="ulogout"),
+]
+
+
+========================View=========================================
+from django.shortcuts import render,redirect
+from django.contrib.auth.models import User
+from django.contrib.auth import login,logout,authenticate
+
+
+def uhome(request):
+	if request.user.is_authenticated:
+		if request.POST.get("marks"):
+			m = int(request.POST.get("marks"))
+			res = ""
+			if m > 80:
+				res = "A" 
+			elif m > 60:
+				res = "B"
+			elif m > 40:
+				res = "C"
+			else:
+				res = "D"
+			msg ="Your marks are " +str(m) +" Your Grade is " +str(res)
+			return render(request,"uhome.html",{"msg":msg})
+		else:
+			return render(request,"uhome.html")
+	else:
+		return redirect("ulogin")
+
+def ulogin(request):
+	if request.user.is_authenticated:
+		return redirect("uhome")
+	else:
+		if request.method=="POST":
+			un = request.POST.get("un")
+			pw = request.POST.get("pw")
+			usr = authenticate(username=un, password=pw)
+			if usr is None:
+				msg = "check username/password"
+				return render(request,"ulogin.html",{"msg":msg})
+			else:
+				login(request,usr)
+				return redirect("uhome")
+		else:
+			return render(request,"ulogin.html")
+
+
+
+
+def usignup(request):
+	if request.user.is_authenticated:
+		return redirect("uhome")
+	else:
+		if request.method=="POST":
+			un = request.POST.get("un")
+			pw1 = request.POST.get("pw1")
+			pw2 = request.POST.get("pw2")
+			if pw1 == pw2 :
+				try:
+					usr = User.objects.get(username=un)
+					msg = "user already exists"
+					return render(request, "usingup.html",{"msg":msg})
+				except User.DoesNotExist:
+					usr = User.objects.create_user(username=un, password=pw1)
+					usr.save()
+					return redirect("ulogin")
+
+			else:
+				msg= "Password did not Match"
+				return redner(request, "usignup.html",{"msg":msg})
+		else:
+			return render(request,"usignup.html")
+
+
+def ulogout(request):
+	logout(request)
+	return redirect("ulogin")
+
+
+
+
+=============================HTML=====================================
+=============================Base HTML=================================
+<html>
+<head>
+<title> Grade Finder App</title>
+<style>
+	*{padding:0px;margin:0px;}
+	.nav{background-color:rgba(12, 174, 199, 0.89);width: 45%;}
+	.nav a{
+	font-size:35px;
+	color:white; 
+	text-decoration: none; 
+	margin:40px;
+}
+
+	</style>
+</head>
+
+<body>
+<center>
+	<div class="nav">
+	{% if user.is_authenticated %}
+		<a href="{% url 'ulogout' %}">Logout</a>
+	{% else %}
+		<a href="{% url 'ulogin' %}">Login</a>
+		<a href="{% url 'usignup' %}">SignUp</a>
+	{% endif %}
+	</div>
+	{% block content %}
+	{% endblock %}
+</center>
+</body>
+</html>
+
+=============================login HTML=================================
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+	*{font-size:20px; font-family:Arial; margin:0px; padding:0px;}
+	body{background-color:rgb(229, 241, 245);}
+	.container{
+	margin-top: 50px;
+	background-color:rgba(12, 174, 199, 0.89);
+	width:40vw;
+	height:80vh;
+	border:1px;
+	border-radius:10px;
+	}
+	h1{
+		color: white;
+		padding: 50px;
+		font-size: 50px;
+		font-family: fangsong;
+	}
+	.input{
+		border: 1px black;
+		border-radius: 4px;
+		width: 300px;
+		height: 40px;
+		text-align: center;
+	}
+	.btn {
+		border-radius: 15px;
+		background-color: rgb(85 197 209);
+		width: 100px;
+		height: 45px;
+		color: white;
+		border: 1px;
+		font-family:sans-serif;
+	}
+	h2{
+		color: rgb(255, 251, 251);
+		font-size: 40px;
+		font-family: fangsong;
+	}
+</style>	
+<div class="container">
+	<h1 >Login Page<h1>
+	<form method="POST">
+	{% csrf_token %}
+	<input class="input" type = "text" name="un" placeholder="Enter Username" required/>
+	<br><br>
+	<input class="input" type = "password" name="pw" placeholder="Enter password" required/>
+	<br><br>
+	<input class="btn"type="submit" value="login"/>
+	</form>
+	<h2> {{ msg }}</h2>
+</div>
+{% endblock %}
+
+=============================signup HTML=================================
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+	*{font-size:20px; font-family:Arial; margin:0px; padding:0px;}
+	body{background-color:rgb(229, 241, 245);}
+	.container{
+	margin-top: 50px;
+	background-color:rgba(12, 174, 199, 0.89);
+	width:40vw;
+	height:80vh;
+	border:1px;
+	border-radius:10px;
+	}
+	h1{
+		color: white;
+		padding: 50px;
+		font-size: 50px;
+		font-family: fangsong;
+	}
+	.input{
+		border: 1px black;
+		border-radius: 4px;
+		width: 300px;
+		height: 40px;
+		text-align: center;
+	}
+	.btn{
+		border-radius: 15px;
+		background-color: rgb(85 197 209);
+		width: 100px;
+		height: 45px;
+		color: white;
+		border: 1px;
+		font-family:sans-serif;
+	}
+	h2{
+		color: rgb(255, 251, 251);
+		font-size: 40px;
+		font-family: fangsong;
+	}
+	</style>
+	<div class="container">
+	<h1>SignUp Page<h1>
+	<form method="POST">
+	{% csrf_token %}
+	<input class="input" type = "text" name="un" placeholder="Enter Username" required/>
+	<br><br>
+	<input class="input" type = "password" name="pw1" placeholder="Enter password" required/>
+	<br><br>
+	<input class="input" type = "password" name="pw2" placeholder="ReEnter password" required/>
+	<br><br>
+	<input class="btn" type="submit" value="SignUp"/>
+	</form>
+	<h2> {{ msg }}</h2>
+</div>
+{% endblock %}
+
+=============================Home HTML=================================
+{% extends 'base.html' %}
+{% block content %}
+<html>
+<head>
+	<title>Grade Finder App</title>
+	<style>
+		*{font-size:20px; font-family:Arial;}
+		body{background-color:rgb(229, 241, 245);}
+		.container{
+		margin-top: 20px;
+		background-color:rgba(12, 174, 199, 0.89);
+		width:40vw;
+		height:80vh;
+		border:1px;
+		border-radius:10px;
+		}
+		h1{
+			color: white;
+			padding: 50px;
+			font-size: 50px;
+			font-family: fangsong;
+		}
+		.input{
+			border: 1px black;
+			border-radius: 4px;
+			width: 300px;
+			height: 40px;
+			text-align: center;
+		}
+		.btn{
+			border-radius: 15px;
+			background-color: rgb(85 197 209);
+			width: 100px;
+			height: 45px;
+			color: white;
+			border: 1px;
+			font-family:sans-serif;
+		}
+		h2{
+			color: rgb(255, 251, 251);
+			font-size: 40px;
+			font-family: fangsong;
+		}
+		</style>
+<script>
+function check()
+{
+	let marks = document.getElementById("id_marks");
+	let msg = document.getElementById("id_msg");
+	
+	if(marks.value=="")
+	{
+		alert("You did not enter marks");
+		msg.innerHTML = "";
+		marks.focus();
+		return false;
+	}
+
+	else if((parseInt(marks.value)<0) || (parseInt(marks.value)>100))
+	{
+		alert("Marks Should be between 0 to 100");
+		msg.innerHTML="";
+		marks.value="";
+		marks.focus();
+		return false;
+	}
+
+	else 
+	{
+		return true;
+	}
+}
+
+</script>
+</head>
+<body>
+<center>
+	<div class="container">
+<h1> Grade Finder App </h1>
+<form method="POST" onsubmit ="return check()">
+{% csrf_token %}
+<input class="input" type = "number" name="marks" id="id_marks" placeholder="Enter Marks(0-100)"/>
+<br><br>
+<input class="btn" type = "Submit" value="Find Grade"/>
+</form>
+<h2 id="id_msg">{{ msg }}</h2>
+</center>
+</div>
+</body>
+</html>
+
+{% endblock %}
